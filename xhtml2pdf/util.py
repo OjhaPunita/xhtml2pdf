@@ -636,13 +636,14 @@ class pisaFileObject:
         if self.local:
             return str(self.local)
         if not self.tmp_file:
-            self.tmp_file = tempfile.NamedTemporaryFile()
+            filename = '/%s/temp_file'%gcs_bucket
+            self.tmp_file = gcs.open(filename, 'w', retry_params=gcs.RetryParams(backoff_factor=1.1))
             if self.file:
-                shutil.copyfileobj(self.file, self.tmp_file)
+                self.tmp_file.write(self.file._fetch_response.content)
             else:
                 self.tmp_file.write(self.getData())
-            self.tmp_file.flush()
-        return self.tmp_file.name
+            self.tmp_file.close()
+            return filename
 
     def getData(self):
         if self.data is not None:
